@@ -136,7 +136,6 @@ plt.tight_layout()
 plt.savefig('grafico1.pdf', format='pdf', bbox_inches='tight')
 plt.show()
 
-# Estatísticas
 print("\n--- Estatísticas dos Tempos de Resposta ---")
 print(f"Número total de requisições: {len(requisicoes)}")
 print(f"Tempo médio total: {sum(tempos_total)/len(tempos_total)*1000:.4f} ms")

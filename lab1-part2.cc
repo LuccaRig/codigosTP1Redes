@@ -1,13 +1,3 @@
-/*
- * SPDX-License-Identifier: GPL-2.0-only
- *
- * lab1-part2.cc
- * 
- * Based on second.cc example (ns-3 tutorial).
- * Adds a second point-to-point link from the last CSMA node to a new server node.
- * The number of packets (nPackets) can be set via command-line argument (default = 1, max = 20).
- */
-
 #include "ns3/applications-module.h"
 #include "ns3/core-module.h"
 #include "ns3/csma-module.h"
@@ -46,21 +36,17 @@ int main(int argc, char *argv[])
 
     nCsma = nCsma == 0 ? 1 : nCsma;
 
-    // First P2P link between n0 and n1
     NodeContainer p2pNodes;
     p2pNodes.Create(2);
 
-    // CSMA nodes (n1, n2, n3, ..., n(1 + nCsma))
     NodeContainer csmaNodes;
-    csmaNodes.Add(p2pNodes.Get(1));  // n1
-    csmaNodes.Create(nCsma);         // n2..n(1 + nCsma)
+    csmaNodes.Add(p2pNodes.Get(1));  
+    csmaNodes.Create(nCsma);        
 
-    // Second P2P link between last CSMA node and new server node
     NodeContainer p2p2Nodes;
-    p2p2Nodes.Add(csmaNodes.Get(nCsma)); // last CSMA node
-    p2p2Nodes.Create(1);                 // new node (server)
+    p2p2Nodes.Add(csmaNodes.Get(nCsma)); 
+    p2p2Nodes.Create(1);                
 
-    // Point-to-point configuration
     PointToPointHelper pointToPoint;
     pointToPoint.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
     pointToPoint.SetChannelAttribute("Delay", StringValue("2ms"));
@@ -68,11 +54,9 @@ int main(int argc, char *argv[])
     NetDeviceContainer p2pDevices;
     p2pDevices = pointToPoint.Install(p2pNodes);
 
-    // Second P2P link (same params)
     NetDeviceContainer p2p2Devices;
     p2p2Devices = pointToPoint.Install(p2p2Nodes);
 
-    // CSMA configuration
     CsmaHelper csma;
     csma.SetChannelAttribute("DataRate", StringValue("100Mbps"));
     csma.SetChannelAttribute("Delay", TimeValue(NanoSeconds(6560)));
@@ -80,13 +64,11 @@ int main(int argc, char *argv[])
     NetDeviceContainer csmaDevices;
     csmaDevices = csma.Install(csmaNodes);
 
-    // Install Internet stack
     InternetStackHelper stack;
-    stack.Install(p2pNodes.Get(0));    // n0
-    stack.Install(csmaNodes);          // n1..n(1 + nCsma)
-    stack.Install(p2p2Nodes.Get(1));   // new server node
+    stack.Install(p2pNodes.Get(0));  
+    stack.Install(csmaNodes);          
+    stack.Install(p2p2Nodes.Get(1));  
 
-    // Assign IP addresses
     Ipv4AddressHelper address;
 
     address.SetBase("10.1.1.0", "255.255.255.0");
@@ -98,13 +80,11 @@ int main(int argc, char *argv[])
     address.SetBase("10.1.3.0", "255.255.255.0");
     Ipv4InterfaceContainer p2p2Interfaces = address.Assign(p2p2Devices);
 
-    // Create Echo Server on the new node (n5)
     UdpEchoServerHelper echoServer(9);
     ApplicationContainer serverApps = echoServer.Install(p2p2Nodes.Get(1));
     serverApps.Start(Seconds(1.0));
-    serverApps.Stop(Seconds(25.0));  // extended for 20 packets
+    serverApps.Stop(Seconds(25.0)); 
 
-    // Create Echo Client on n0
     UdpEchoClientHelper echoClient(p2p2Interfaces.GetAddress(1), 9);
     echoClient.SetAttribute("MaxPackets", UintegerValue(nPackets));
     echoClient.SetAttribute("Interval", TimeValue(Seconds(1.0)));
@@ -114,10 +94,8 @@ int main(int argc, char *argv[])
     clientApps.Start(Seconds(2.0));
     clientApps.Stop(Seconds(25.0));
 
-    // Enable routing
     Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
-    // Enable PCAP tracing for all links
     pointToPoint.EnablePcapAll("lab1-part2-p2p");
     csma.EnablePcap("lab1-part2-csma", csmaDevices.Get(1), true);
     pointToPoint.EnablePcapAll("lab1-part2-p2p2");

@@ -1,13 +1,3 @@
-/*
- * SPDX-License-Identifier: GPL-2.0-only
- *
- * lab1-part3.cc
- *
- * Modified from third.cc (ns-3 tutorial, section 7.3)
- * Replaces the CSMA LAN with a second WiFi network.
- * Adds nPackets as a command-line parameter (default = 1, max = 20).
- */
-
 #include "ns3/applications-module.h"
 #include "ns3/core-module.h"
 #include "ns3/internet-module.h"
@@ -52,7 +42,6 @@ int main(int argc, char* argv[])
         LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
     }
 
-    // --------------------- POINT-TO-POINT LINK ---------------------
     NodeContainer p2pNodes;
     p2pNodes.Create(2);
 
@@ -62,7 +51,6 @@ int main(int argc, char* argv[])
 
     NetDeviceContainer p2pDevices = pointToPoint.Install(p2pNodes);
 
-    // --------------------- FIRST WIFI NETWORK ---------------------
     NodeContainer wifiStaNodes1;
     wifiStaNodes1.Create(nWifi);
     NodeContainer wifiApNode1 = p2pNodes.Get(0);
@@ -83,7 +71,6 @@ int main(int argc, char* argv[])
     mac1.SetType("ns3::ApWifiMac", "Ssid", SsidValue(ssid1));
     apDevice1 = wifi1.Install(phy1, mac1, wifiApNode1);
 
-    // --------------------- SECOND WIFI NETWORK ---------------------
     NodeContainer wifiStaNodes2;
     wifiStaNodes2.Create(nWifi);
     NodeContainer wifiApNode2 = p2pNodes.Get(1);
@@ -104,7 +91,6 @@ int main(int argc, char* argv[])
     mac2.SetType("ns3::ApWifiMac", "Ssid", SsidValue(ssid2));
     apDevice2 = wifi2.Install(phy2, mac2, wifiApNode2);
 
-    // --------------------- MOBILITY ---------------------
     MobilityHelper mobility;
 
     mobility.SetPositionAllocator("ns3::GridPositionAllocator",
@@ -123,14 +109,12 @@ int main(int argc, char* argv[])
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     mobility.Install(wifiApNode1);
     mobility.Install(wifiApNode2);
-        
-    // --------------------- INTERNET STACK ---------------------
+    
     InternetStackHelper stack;
     stack.Install(p2pNodes);
     stack.Install(wifiStaNodes1);
     stack.Install(wifiStaNodes2);
 
-    // --------------------- IP ADDRESSING ---------------------
     Ipv4AddressHelper address;
 
     address.SetBase("10.1.1.0", "255.255.255.0");
@@ -144,9 +128,8 @@ int main(int argc, char* argv[])
     Ipv4InterfaceContainer staInterfaces2 = address.Assign(staDevices2);
     address.Assign(apDevice2);
 
-    // --------------------- APPLICATIONS ---------------------
     UdpEchoServerHelper echoServer(9);
-    ApplicationContainer serverApps = echoServer.Install(wifiStaNodes2.Get(nWifi - 1)); // last STA of network 2
+    ApplicationContainer serverApps = echoServer.Install(wifiStaNodes2.Get(nWifi - 1)); 
     serverApps.Start(Seconds(1.0));
     serverApps.Stop(Seconds(25.0));
 
@@ -155,16 +138,14 @@ int main(int argc, char* argv[])
     echoClient.SetAttribute("Interval", TimeValue(Seconds(1.0)));
     echoClient.SetAttribute("PacketSize", UintegerValue(1024));
 
-    ApplicationContainer clientApps = echoClient.Install(wifiStaNodes1.Get(nWifi - 1)); // last STA of network 1
+    ApplicationContainer clientApps = echoClient.Install(wifiStaNodes1.Get(nWifi - 1)); 
     clientApps.Start(Seconds(2.0));
     clientApps.Stop(Seconds(25.0));
 
-    // --------------------- ROUTING ---------------------
     Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
     Simulator::Stop(Seconds(26.0));
 
-    // --------------------- TRACING ---------------------
     if (tracing)
     {
         phy1.SetPcapDataLinkType(WifiPhyHelper::DLT_IEEE802_11_RADIO);

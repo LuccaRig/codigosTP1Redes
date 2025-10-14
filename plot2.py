@@ -154,6 +154,5 @@ print(f"  Primeira: {tempos_total[0]*1000:.4f} ms")
 print(f"  Demais: {sum(tempos_total[1:])/len(tempos_total[1:])*1000:.4f} ms em média")
 print(f"  Diferença: {tempos_total[0]*1000 - sum(tempos_total[1:])/len(tempos_total[1:])*1000:.4f} ms")
 
-# Variação dos tempos
 variancia = sum((x - sum(tempos_total)/len(tempos_total))**2 for x in tempos_total) / len(tempos_total)
 print(f"Variação (desvio padrão): {(variancia**0.5)*1000:.4f} ms")

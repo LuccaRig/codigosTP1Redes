@@ -28,14 +28,12 @@ main(int argc, char* argv[])
     LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
     LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
-    // Cria os nós
     NodeContainer p2pNodes;
     p2pNodes.Create(2);
 
-    // Cria nós CSMA para os clientes adicionais
     NodeContainer csmaNodes;
-    csmaNodes.Add(p2pNodes.Get(1));  // Adiciona n1 como gateway
-    csmaNodes.Create(nClients);      // Cria nós para os clientes
+    csmaNodes.Add(p2pNodes.Get(1));  
+    csmaNodes.Create(nClients);     
 
     PointToPointHelper pointToPoint;
     pointToPoint.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
@@ -44,7 +42,6 @@ main(int argc, char* argv[])
     NetDeviceContainer p2pDevices;
     p2pDevices = pointToPoint.Install(p2pNodes);
 
-    // Cria rede CSMA para os clientes
     CsmaHelper csma;
     csma.SetChannelAttribute("DataRate", StringValue("100Mbps"));
     csma.SetChannelAttribute("Delay", TimeValue(NanoSeconds(6560)));
@@ -53,51 +50,43 @@ main(int argc, char* argv[])
     csmaDevices = csma.Install(csmaNodes);
 
     InternetStackHelper stack;
-    stack.Install(p2pNodes.Get(0));  // Instala no n0
-    stack.Install(csmaNodes);        // Instala no n1 e nos clientes
+    stack.Install(p2pNodes.Get(0)); 
+    stack.Install(csmaNodes);        
 
-    // Configura endereçamento IP
     Ipv4AddressHelper address;
     
-    // Rede point-to-point (n0 - n1)
     address.SetBase("10.1.1.0", "255.255.255.0");
     Ipv4InterfaceContainer p2pInterfaces;
     p2pInterfaces = address.Assign(p2pDevices);
 
-    // Rede CSMA (clientes)
     address.SetBase("10.1.2.0", "255.255.255.0");
     Ipv4InterfaceContainer csmaInterfaces;
     csmaInterfaces = address.Assign(csmaDevices);
 
-    // Servidor no n1 (primeiro nó da rede CSMA)
     UdpEchoServerHelper echoServer(9);
-    ApplicationContainer serverApps = echoServer.Install(csmaNodes.Get(0));  // n1
+    ApplicationContainer serverApps = echoServer.Install(csmaNodes.Get(0)); 
     serverApps.Start(Seconds(1.0));
     serverApps.Stop(Seconds(10.0));
 
-    // Cria clientes em nós diferentes, cada um com seu próprio IP
     ApplicationContainer clientApps;
-    for (uint32_t i = 1; i <= nClients; i++) {  // Começa de 1 para pular o n1 (servidor)
-        // Cada cliente usa o IP do servidor (n1) como destino
-        UdpEchoClientHelper echoClient(csmaInterfaces.GetAddress(0), 9);  // Servidor no índice 0
+    for (uint32_t i = 1; i <= nClients; i++) { 
+
+        UdpEchoClientHelper echoClient(csmaInterfaces.GetAddress(0), 9);  
         echoClient.SetAttribute("MaxPackets", UintegerValue(nPackets));
         echoClient.SetAttribute("Interval", TimeValue(Seconds(1.0)));
         echoClient.SetAttribute("PacketSize", UintegerValue(1024));
 
-        // Gera um tempo aleatório entre 2 e 7 segundos
-        double randomStartTime = 2.0 + (rand() % 6); // 2.0 + (0 a 5) = 2 a 7 segundos
+        double randomStartTime = 2.0 + (rand() % 6); 
         
-        // Instala cliente no nó CSMA correspondente
+
         ApplicationContainer clientApp = echoClient.Install(csmaNodes.Get(i));
-        clientApp.Start(Seconds(randomStartTime));  // Tempo aleatório
+        clientApp.Start(Seconds(randomStartTime));  
         clientApp.Stop(Seconds(20.0));
         clientApps.Add(clientApp);
     }
 
-    // Habilita roteamento global
     Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
-    // Habilita captura de pacotes para debugging (opcional)
     pointToPoint.EnablePcapAll("multiclient");
     csma.EnablePcap("multiclient", csmaDevices.Get(0), true);
 
